@@ -30,60 +30,31 @@ def mostrar_informacaos(tabela, string, op):
             print(f'{item[0]} ({item[1]})')
     print("================================================")
 
+
 """
- O método procura_comentarios, abre o arquivo e percorre ele até o final, 
-pegando linha por linha e verificando se ela é um comentário com a função startswith(),
-que verifica se a linha inicia com //.
+ O método salva_comentario, recebe a posição que o comentario está no arquivo
+e salva no dicionário(lista) de tokens.
 """
-def procura_comentarios(lista):
-    with open("teste.txt", "r") as arquivo:
-        cont = 1
-
-        while True:
-            linha_atual = arquivo.readline().strip('\n')
-
-            if linha_atual == "": # comando utilizado para fazer o controle de final de arquivo.
-                linha_atual = arquivo.readline().strip("\n")
-                if linha_atual == "": # verifica duas vezes, para ter caso acha uma linha em branco no arquivo, mas ainda não seja o final dele.
-                    break
-
-            if linha_atual.startswith("//"):
-                lista.update({cont: "COMENTÁRIO"})
-
-            cont += 1
+def salva_comentario(posicao):
+    tokens.update({posicao: "COMENTÁRIO"})
 
 
 """
- O método palavras_reservadas, abre o arquivo e percorre ele até o final, 
-pegando linha por linha e comparando com a lista de palavras reservadas, caso o conteúdo da linhas
-seja uma palavra reservada, o conteúdo é adicionado ao dicionário(lista).
+ O método salva_palavras_reservadas, recebe a posição e a palavra reservada e 
+salva o conteúdo no dicionário(lista) de tokens.
 """
-def procura_palavras_reservadas(lista):
-    with open("teste.txt", "r") as arquivo:
-        cont = 1
-        while True:
-            linha_atual = arquivo.readline().strip("\n")
-
-            if linha_atual == "": # comando utilizado para fazer o controle de final de arquivo.
-                linha_atual = arquivo.readline().strip("\n")
-                if linha_atual == "": # verifica duas vezes, para ter caso acha uma linha em branco no arquivo, mas ainda não seja o final dele.
-                    break
-
-            for palavra in palavras_reservadas: # pega palavra por palavra da lista de palavras reservadas, para posterior comparação.
-                if palavra == linha_atual:
-                    lista.update({cont: f"{palavra.upper()}"}) # adiciona a palavra ao dicionário(lista)
-
-            cont += 1
+def salva_palavras_reservadas(posicao, palavra):
+    tokens.update({posicao: f"{palavra.upper()}"})
 
 
 """
-O método é responsavél de encontrar os tokens de identificador e de numeros,
+O método é responsavél de encontrar os tokens existentes no arquivo,
 ele percorre o arquivo verificando linha por linha, e toda vez que encontra
-algum identificador ou numero, ele verifica se aquele token já existe,
-chamando o método valida_simbolos(), e pega a posição do token na tabela de simbolos,
-salvando o token, a posição e a qual dos simbolos ele faz referencia
+algum token, ele verifica se aquele token já existe,
+chamando o método valida_simbolos(), que retorna a posição do token na tabela de simbolos.
+Salvando o token, a posição e a qual dos simbolos ele faz referencia
 """
-def procura_identificadores_e_numeros(lista):
+def procura_tokens():
     with open("teste.txt", "r") as arquivo:
         cont = 0
         encontrou = False
@@ -96,28 +67,30 @@ def procura_identificadores_e_numeros(lista):
                     break
             cont += 1
 
-            if linha_atual.startswith(" ") or linha_atual.startswith("//"): # verifica se é um comentario ou começa com espaço em branco e pula a linha.
-                encontrou = True # quando encontrou recebe True, ele não entra em nenhuma das condicionais de verificação.
+            if linha_atual.startswith(" "): # verifica se começa com espaço em branco e pula a linha.
+                salva_erro(cont, linha_atual)
+                encontrou = True  # quando encontrou recebe True, ele não entra em nenhuma das condicionais de verificação.
 
-            for palavra in palavras_reservadas: # verifica se é uma palavra reservada e pula a linha.
+            if linha_atual.startswith("//"): # verifica se é um comentario
+                salva_comentario(cont)
+                encontrou = True
+
+            for palavra in palavras_reservadas: # verifica se é uma palavra reservada
                 if palavra == linha_atual:
+                    salva_palavras_reservadas(cont, linha_atual)
                     encontrou = True
 
             if linha_atual.isalnum() and encontrou == False: # verifica se a linha é alfanúmerica
                 for letra in alfabeto: # percorre posição por posição da linha
                     if linha_atual[0] == letra or linha_atual[0] == letra.upper(): # verifica se a primeira linha é uma letra maiuscula ou minuscula.
                         ident = valida_simbolos(linha_atual, cont) # pega a posição na tabela de simbolos
-                        lista.update({cont: f"IDENTIFICADOR {ident}"}) # salva a informação
+                        tokens.update({cont: f"IDENTIFICADOR {ident}"}) # salva a informação
                         encontrou = True
-
             if linha_atual.isnumeric() and encontrou == False: # verifica se é um número
                 if int(linha_atual) <= 99 and len(linha_atual) <= 2: # se o número tem duas casa decimais e é menor ou igual a 99
                     ident = valida_simbolos(linha_atual, cont) # pega a posição na tabela de simbolos
                     tokens.update({cont: f"NÚMERO INTEIRO {ident}"}) # salva a informação
                     encontrou = True
-                else:
-                    erros.update({cont: f"{linha_atual}"}) # se não for então é salvo um erro
-                    continue
             if encontrou == False:
                 try:
                     if float(linha_atual): # verifica se é um float
@@ -132,58 +105,19 @@ def procura_identificadores_e_numeros(lista):
                                 tokens.update({cont: f"NÚMERO REAL {ident}"})
                                 encontrou = True
                 except ValueError:
-                    continue
-
+                    if encontrou == False:
+                        salva_erro(cont, linha_atual)
+            if encontrou == False:
+                salva_erro(cont, linha_atual)
             encontrou = False
 
+
 """
-O método percorre as linhas do arquivo, verificando por meio de ifs, se existe erro na linha,
-por erros se entende aquilo que não é aceito pela linguagem, ou seja, caracteres especiais,
-uma string que começa com número e depois tem letras, e etc.
+ O método salva_erro, recebe a posição e informação da linha e 
+salva o conteúdo no dicionário(lista) de erros.
 """
-def procura_erros():
-    with open("teste.txt", "r") as arquivo:
-        cont = 0
-        while True:
-            linha_atual = arquivo.readline().strip("\n")
-
-            if linha_atual == "":
-                linha_atual = arquivo.readline().strip("\n")
-                if linha_atual == "":
-                    break
-
-            cont += 1
-
-            if linha_atual.startswith("//"):
-                continue
-            if linha_atual.startswith(" "): # verifica se começa com espaço.
-                erros.update({cont: f"{linha_atual}"})
-                continue
-            if linha_atual[0:1].isalpha() and not linha_atual.isalnum(): # verifica se a string começa com uma letra, mas não é um identificador.
-                erros.update({cont: f"{linha_atual}"})
-                continue
-            if linha_atual.isnumeric() and int(linha_atual) > 99: # verifica se um número é maior que 99.
-                erros.update({cont: f"{linha_atual}"})
-                continue
-            if not linha_atual.isalnum(): # verifica os números floats que são errados.
-                if linha_atual[2:3] == "." and len(linha_atual) <= 4:
-                    erros.update({cont: f"{linha_atual}"})
-                    continue
-                if linha_atual[1:2] == "." and len(linha_atual) > 4:
-                    erros.update({cont: f"{linha_atual}"})
-                    continue
-            if not linha_atual.isalnum(): # verifica os números floats que são aceitos, para não cair em algum outro erro.
-                if linha_atual[0:2].isnumeric() and linha_atual[2:3] == ".":
-                    if len(linha_atual) == 5:
-                        continue
-                if linha_atual[0:1].isnumeric() and linha_atual[1:2] == ".":
-                    if len(linha_atual) == 4:
-                        continue
-                erros.update({cont: f"{linha_atual}"})
-            if linha_atual[0:1].isnumeric() and linha_atual[1:].isalnum(): # verifica se a primeira posição da string é um número, mas o restante não.
-                if not linha_atual.isnumeric():
-                    erros.update({cont: f"{linha_atual}"})
-                    continue
+def salva_erro(posicao, palavra):
+    erros.update({posicao: f"{palavra}"})
 
 
 """
@@ -207,10 +141,7 @@ def valida_simbolos(simbolo, posicao):
 
 
 # Chamando os métodos
-procura_palavras_reservadas(tokens)
-procura_comentarios(tokens)
-procura_identificadores_e_numeros(tokens)
-procura_erros()
+procura_tokens()
 mostrar_informacaos(tokens, "Tokens de Entrada:", 0)
 mostrar_informacaos(simbolos, "Tabela de Símbolos:", 1)
 mostrar_informacaos(erros, "Erros nas linhas:", 2)
