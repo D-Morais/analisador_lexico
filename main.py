@@ -3,8 +3,8 @@ tokens = {} # Um dicionário para guardar os tokens
 erros = {} # Um dicionário para guardar os erros
 simbolos = {} # Um dicionário para guardar os simbolos
 simbolos_aux = [] # Lista para guardar os símbolos
-alfabeto = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "h", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
-            "u", "v", "w", "x", "y", "y"]
+alfabeto = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+            "u", "v", "w", "x", "y", "z"]
 
 """
 Método responsável por printar as informações na tela, recebe por parâmetro 3 itens: 
